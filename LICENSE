@@ -1,0 +1,107 @@
+MIT License
+
+Copyright (c) 2025 Phone OSINT Framework Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+ADDITIONAL TERMS AND CONDITIONS FOR PHONE OSINT FRAMEWORK
+================================================================================
+
+This software is provided for educational, research, and authorized
+professional use only. By using this software, you agree to the following
+additional terms:
+
+1. AUTHORIZED USE ONLY
+   This software shall only be used for:
+   - Authorized security testing and penetration testing
+   - Defensive cybersecurity investigations
+   - Educational and research purposes
+   - Law enforcement activities (with proper legal authorization)
+   - Corporate security assessments (with proper authorization)
+
+2. PROHIBITED USES
+   This software shall NOT be used for:
+   - Stalking, harassment, or intimidation
+   - Unauthorized surveillance or espionage
+   - Identity theft or fraud
+   - Violation of privacy rights
+   - Any illegal activities under applicable local, state, or federal law
+   - Circumventing security measures without authorization
+
+3. LEGAL COMPLIANCE
+   Users are solely responsible for:
+   - Obtaining proper authorization before conducting investigations
+   - Complying with all applicable laws and regulations
+   - Respecting privacy rights and terms of service of third-party services
+   - Ensuring their use is consistent with their jurisdiction's laws
+
+4. DATA PROTECTION
+   Users must:
+   - Handle any collected data in accordance with applicable privacy laws
+   - Implement appropriate security measures for sensitive data
+   - Dispose of investigation data securely when no longer needed
+   - Respect data subject rights under GDPR, CCPA, and similar regulations
+
+5. ETHICAL CONSIDERATIONS
+   Users should:
+   - Consider the ethical implications of their investigations
+   - Minimize data collection to what is necessary for the investigation
+   - Respect the privacy and dignity of individuals
+   - Follow responsible disclosure practices for security findings
+
+6. THIRD-PARTY SERVICES
+   This software integrates with various third-party APIs and services.
+   Users must:
+   - Comply with the terms of service of all integrated services
+   - Respect rate limits and usage restrictions
+   - Be aware that third-party services may have their own privacy policies
+
+7. DISCLAIMER OF WARRANTIES
+   The authors and contributors of this software:
+   - Make no warranties about the accuracy or completeness of results
+   - Are not responsible for decisions made based on the software's output
+   - Do not guarantee the software's fitness for any particular purpose
+   - Are not liable for any misuse of the software
+
+8. INDEMNIFICATION
+   Users agree to indemnify and hold harmless the authors and contributors
+   from any claims, damages, or legal actions arising from their use of
+   the software.
+
+9. TERMINATION
+   These additional terms remain in effect until terminated. Rights under
+   this license terminate automatically if you violate any of these terms.
+
+10. GOVERNING LAW
+    These additional terms are governed by the laws of the jurisdiction
+    where the software is used, without regard to conflict of law principles.
+
+================================================================================
+
+By using this software, you acknowledge that you have read, understood, and
+agree to be bound by both the MIT License terms above and these additional
+terms and conditions.
+
+If you do not agree to these terms, you may not use this software.
+
+For questions about licensing or to report misuse, please contact:
+[INSERT CONTACT EMAIL]
+
+Last updated: September 29, 2025

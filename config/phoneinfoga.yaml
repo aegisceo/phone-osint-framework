@@ -1,0 +1,22 @@
+scanners:
+  numverify:
+    enabled: true
+    api_key: "${NUMVERIFY_API_KEY}"
+  
+  googlesearch:
+    enabled: true
+    max_results: 100
+    
+  local:
+    enabled: true
+    
+  ovh:
+    enabled: true
+
+output:
+  format: json
+  verbose: true
+
+http:
+  timeout: 30
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"

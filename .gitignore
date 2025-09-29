@@ -1,0 +1,263 @@
+# ===========================================
+# Phone OSINT Framework - .gitignore
+# ===========================================
+
+# CRITICAL: Environment files with API keys
+# These files contain sensitive API keys and secrets
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+config/.env
+config/.env.*
+!config/.env.example
+*.env
+
+# API Keys and Secrets
+*api_key*
+*api-key*
+*apikey*
+*secret*
+*password*
+*token*
+*credentials*
+config/api_keys*
+config/secrets*
+
+# Investigation Results and Sensitive Data
+# These directories may contain PII and sensitive investigation data
+results/
+investigations/
+reports/
+output/
+logs/
+cache/
+data/
+temp/
+tmp/
+
+# Log files
+*.log
+*.log.*
+*.audit
+debug.log
+error.log
+access.log
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificate and key files
+*.pem
+*.key
+*.crt
+*.cert
+*.p12
+*.pfx
+
+# Backup and temporary files
+*.bak
+*.backup
+*.tmp
+*.temp
+*~
+.#*
+#*#
+
+# Python
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+.virtualenv/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# celery beat schedule file
+celerybeat-schedule
+
+# SageMath parsed files
+*.sage.py
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+.metadata
+.spyderproject
+.spyproject
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Windows
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Browser automation files
+chromedriver
+chromedriver.exe
+geckodriver
+geckodriver.exe
+*.har
+
+# Selenium
+selenium-debug.log
+ghostdriver.log
+
+# Investigation artifacts (may contain PII)
+*.pdf
+*.docx
+*.xlsx
+screenshots/
+downloads/
+evidence/
+
+# Sensitive JSON files (but keep config examples)
+*.json
+!package.json
+!config/*.example.json
+!config/*.template.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# Docker (if used)
+docker-compose.override.yml
+.dockerignore
+
+# Cloud and deployment
+.aws/
+.azure/
+.gcp/
+terraform.tfstate*
+*.tfvars
+
+# Node.js (if used for any frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation build
+docs/_build/
+site/
+
+# ===========================================
+# SECURITY NOTES:
+#
+# 1. NEVER commit files containing:
+#    - API keys or tokens
+#    - Investigation results with PII
+#    - Database files with sensitive data
+#    - Screenshots or evidence files
+#
+# 2. Before pushing to public repos:
+#    - Review all committed files
+#    - Ensure no sensitive data is included
+#    - Test with dummy data only
+#
+# 3. If you accidentally commit sensitive data:
+#    - Remove it immediately
+#    - Rewrite history if necessary
+#    - Rotate any exposed credentials
+# ===========================================#*.zip
+*.tar.gz

@@ -1,0 +1,39 @@
+dorks:
+  basic:
+    - '"{phone}"'
+    - '"{phone}" contact'
+    - '"{phone}" phone'
+    - '"{phone}" call'
+    - '"{phone}" mobile'
+    
+  social:
+    - '"{phone}" site:linkedin.com'
+    - '"{phone}" site:facebook.com'
+    - '"{phone}" site:instagram.com'
+    - '"{phone}" site:twitter.com'
+    - '"{phone}" site:reddit.com'
+    
+  documents:
+    - '"{phone}" filetype:pdf'
+    - '"{phone}" filetype:doc'
+    - '"{phone}" filetype:docx'
+    - '"{phone}" filetype:xls'
+    - '"{phone}" filetype:xlsx'
+    
+  business:
+    - '"{phone}" "LLC"'
+    - '"{phone}" "Inc"'
+    - '"{phone}" "Corp"'
+    - '"{phone}" "business"'
+    - '"{phone}" "company"'
+    
+  government:
+    - '"{phone}" site:*.gov'
+    - '"{phone}" "court"'
+    - '"{phone}" "case"'
+    - '"{phone}" "filing"'
+    
+  location_based:
+    - '"{phone}" "{city}"'
+    - '"{phone}" "{state}"'
+    - '"{phone}" "{area_code}"'
