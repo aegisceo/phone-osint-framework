@@ -5,9 +5,9 @@
 [![Defensive Security](https://img.shields.io/badge/Use%20Case-Defensive%20Security-green.svg)]()
 [![Matrix Themed](https://img.shields.io/badge/Interface-Matrix%20Themed-red.svg)]()
 
-A comprehensive, professional-grade phone number investigation framework that combines multiple OSINT tools and techniques with **aggressive name hunting** capabilities. Built with a Matrix-themed web interface for the ultimate cyber investigation experience.
+A comprehensive, professional-grade phone number investigation framework that combines multiple OSINT tools and techniques with **aggressive name hunting** capabilities. Built with a Matrix-themed web interface for the ultimate vibe cause THOSE WERE SOME F**KN H4x0rz.
 
-**🎯 THE GRAIL: Our primary focus is extracting the full name of phone number owners through advanced multi-API techniques.**
+**🎯 THE GRAIL: Our primary focus is extracting the full name and as much ancillary data of phone number owners through advanced multi-API techniques.**
 
 > ⚠️ **Important**: This tool is designed exclusively for authorized security testing, defensive investigations, and educational purposes. Always obtain proper authorization before investigating phone numbers.
 
