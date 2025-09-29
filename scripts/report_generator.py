@@ -57,6 +57,11 @@ class ReportGenerator:
     </div>
 
     <div class="section">
+        <h2>🎯 Advanced Name Hunting Results (THE GRAIL)</h2>
+        {{ name_hunting_results }}
+    </div>
+
+    <div class="section">
         <h2>PhoneInfoga Results</h2>
         {{ phoneinfoga_results }}
     </div>
@@ -111,6 +116,10 @@ class ReportGenerator:
         phoneinfoga = self.data.get('results', {}).get('phoneinfoga', {})
         validation = self.data.get('results', {}).get('validation', {})
         validation_summary = validation.get('summary', {})
+        name_hunting = self.data.get('results', {}).get('name_hunting', {})
+
+        # Get the best owner name from unified name hunting (THE GRAIL!)
+        owner_name = self._get_best_owner_name(name_hunting, validation_summary)
 
         return {
             'phone': self.phone,
@@ -119,12 +128,13 @@ class ReportGenerator:
             'location': validation_summary.get('location', 'Unknown'),
             'line_type': validation_summary.get('line_type', 'Unknown'),
             'country': validation_summary.get('country', 'Unknown'),
-            'owner_name': validation_summary.get('owner_name', 'Unknown'),
+            'owner_name': owner_name,
             'valid': validation_summary.get('valid', False),
             'sources_used': ', '.join(validation_summary.get('sources_used', [])),
             'risk_score': self.calculate_risk_score(),
             'risk_class': self.get_risk_class(),
             'validation_results': self.format_validation_results(),
+            'name_hunting_results': self.format_name_hunting_results(),
             'phoneinfoga_results': self.format_phoneinfoga_results(),
             'online_presence': self.format_online_presence(),
             'breach_results': self.format_breach_results(),
@@ -266,8 +276,85 @@ class ReportGenerator:
         ]
         
         return "<ul>" + "".join(f"<li>{rec}</li>" for rec in recommendations) + "</ul>"
-    
+
     def generate_map(self):
         """Generate location map if coordinates available"""
         # This would create a map visualization
         pass
+
+    def _get_best_owner_name(self, name_hunting_data, validation_summary):
+        """Extract the best owner name from unified name hunting results"""
+        if not name_hunting_data or not name_hunting_data.get('found'):
+            # Fallback to validation data
+            return validation_summary.get('owner_name', 'Unknown')
+
+        # Use primary names from unified hunting (highest confidence)
+        primary_names = name_hunting_data.get('primary_names', [])
+        if primary_names:
+            return primary_names[0]  # Use the first primary name
+
+        # Fallback to any name found
+        all_names = name_hunting_data.get('all_names', [])
+        if all_names:
+            return all_names[0]
+
+        return 'Unknown'
+
+    def format_name_hunting_results(self):
+        """Format name hunting results as HTML"""
+        name_hunting = self.data.get('results', {}).get('name_hunting', {})
+
+        if not name_hunting or not name_hunting.get('found'):
+            return '<p class="warning">No names discovered through advanced hunting techniques.</p>'
+
+        html = ""
+
+        # Primary Names (THE GRAIL!)
+        primary_names = name_hunting.get('primary_names', [])
+        if primary_names:
+            html += '<h3>🔥 PRIMARY NAMES (HIGH CONFIDENCE)</h3>'
+            html += '<ul class="name-list">'
+            for name in primary_names:
+                confidence = name_hunting.get('confidence_scores', {}).get(name, 0)
+                html += f'<li><strong class="success">{name}</strong> (Confidence: {confidence:.2f})</li>'
+            html += '</ul>'
+
+        # All discovered names
+        all_names = name_hunting.get('all_names', [])
+        if len(all_names) > len(primary_names):
+            other_names = [name for name in all_names if name not in primary_names]
+            if other_names:
+                html += '<h3>📋 Additional Names Discovered</h3>'
+                html += '<ul class="name-list">'
+                for name in other_names:
+                    confidence = name_hunting.get('confidence_scores', {}).get(name, 0)
+                    html += f'<li>{name} (Confidence: {confidence:.2f})</li>'
+                html += '</ul>'
+
+        # Hunting statistics
+        html += '<h3>📊 Hunting Statistics</h3>'
+        html += '<table>'
+        html += f'<tr><td><strong>Best Confidence</strong></td><td>{name_hunting.get("best_confidence", 0):.2f}</td></tr>'
+        html += f'<tr><td><strong>Total Names Found</strong></td><td>{len(all_names)}</td></tr>'
+        html += f'<tr><td><strong>Execution Time</strong></td><td>{name_hunting.get("execution_time", 0):.2f}s</td></tr>'
+
+        methods_successful = name_hunting.get('methods_successful', [])
+        if methods_successful:
+            html += f'<tr><td><strong>Successful Methods</strong></td><td>{", ".join(methods_successful).title()}</td></tr>'
+
+        html += '</table>'
+
+        # Correlation analysis
+        correlation = name_hunting.get('correlation_analysis', {})
+        if correlation.get('consensus_score', 0) > 0:
+            html += '<h3>🧠 Correlation Analysis</h3>'
+            html += '<table>'
+            html += f'<tr><td><strong>Consensus Score</strong></td><td>{correlation["consensus_score"]:.2f}</td></tr>'
+
+            name_clusters = correlation.get('name_clusters', [])
+            if name_clusters:
+                html += f'<tr><td><strong>Name Clusters</strong></td><td>{len(name_clusters)}</td></tr>'
+
+            html += '</table>'
+
+        return html

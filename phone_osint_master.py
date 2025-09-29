@@ -163,6 +163,28 @@ class PhoneOSINTMaster:
 
         return results
 
+    def run_unified_name_hunting(self):
+        """Run comprehensive unified name hunting (THE GRAIL!)"""
+        self.logger.info("🎯 Starting UNIFIED NAME HUNTING - THE GRAIL!")
+
+        from scripts.unified_name_hunter import UnifiedNameHunter
+        hunter = UnifiedNameHunter(self.phone_number)
+        results = hunter.hunt_ultimate()
+
+        output_file = self.output_dir / "name_hunting_results.json"
+        with open(output_file, 'w') as f:
+            json.dump(results, f, indent=2)
+
+        # Log the grail results
+        if results['found']:
+            self.logger.info(f"🔥 THE GRAIL ACHIEVED! Primary names: {results['primary_names']}")
+            self.logger.info(f"💰 Total names discovered: {len(results['all_names'])}")
+            self.logger.info(f"⭐ Best confidence: {results.get('best_confidence', 0):.2f}")
+        else:
+            self.logger.warning("❌ The Grail remains elusive - no names found")
+
+        return results
+
     def run_full_investigation(self):
         """Run complete investigation pipeline"""
         self.logger.info(f"Starting full investigation for: {self.phone_number}")
@@ -177,29 +199,33 @@ class PhoneOSINTMaster:
         validation_results = self.run_phone_validation()
         all_results['results']['validation'] = validation_results
 
-        # 2. PhoneInfoga scan
+        # 2. AGGRESSIVE NAME HUNTING (THE GRAIL!)
+        name_hunting_results = self.run_unified_name_hunting()
+        all_results['results']['name_hunting'] = name_hunting_results
+
+        # 3. PhoneInfoga scan
         phone_data = self.run_phoneinfoga()
         all_results['results']['phoneinfoga'] = phone_data
 
-        # 3. Google dorking
+        # 4. Google dorking
         google_results = self.run_google_dorking(phone_data)
         all_results['results']['google_dorking'] = google_results
 
-        # 4. Social media
+        # 5. Social media
         social_results = self.run_social_media_scan()
         all_results['results']['social_media'] = social_results
 
-        # 5. Breach check
+        # 6. Breach check
         breach_results = self.run_data_breach_check()
         all_results['results']['breaches'] = breach_results
 
-        # 6. Carrier analysis (using validation data)
+        # 7. Carrier analysis (using validation data)
         carrier_name = validation_results.get('summary', {}).get('carrier')
         if carrier_name and carrier_name != 'Unknown':
             carrier_results = self.run_carrier_analysis(carrier_name)
             all_results['results']['carrier_analysis'] = carrier_results
 
-        # 7. Generate report
+        # 8. Generate report
         report_path = self.generate_report(all_results)
 
         # Save complete results
