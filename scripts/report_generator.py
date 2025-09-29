@@ -205,14 +205,34 @@ class ReportGenerator:
         return html
 
     def format_phoneinfoga_results(self):
-        """Format PhoneInfoga results as HTML"""
+        """Format PhoneInfoga results as HTML (cleaned up, no useless URLs)"""
         data = self.data.get('results', {}).get('phoneinfoga', {})
 
         html = "<table>"
-        for key, value in data.items():
-            if value and key != 'raw_local':
-                html += f"<tr><td><strong>{key.replace('_', ' ').title()}</strong></td><td>{value}</td></tr>"
+
+        # Only show basic phone data that's actually useful
+        useful_fields = ['country', 'local', 'e164', 'international', 'scanners_succeeded', 'scanners_failed']
+
+        for key in useful_fields:
+            value = data.get(key)
+            if value is not None:
+                # Format the value appropriately
+                if key == 'scanners_failed' and isinstance(value, list):
+                    formatted_value = ', '.join(value) if value else 'None'
+                else:
+                    formatted_value = str(value)
+
+                html += f"<tr><td><strong>{key.replace('_', ' ').title()}</strong></td><td>{formatted_value}</td></tr>"
+
+        # Show useful findings if any (but these are typically empty too)
+        useful_findings = data.get('useful_findings', [])
+        if useful_findings:
+            html += f"<tr><td><strong>Additional Findings</strong></td><td>{'; '.join(useful_findings)}</td></tr>"
+
         html += "</table>"
+
+        # Add note about filtered content
+        html += "<p><em>Note: Search URL suggestions have been filtered out as they provide no actionable intelligence.</em></p>"
 
         return html
     

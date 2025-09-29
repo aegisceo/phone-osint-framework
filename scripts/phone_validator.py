@@ -177,17 +177,35 @@ class PhoneValidator:
             })
             summary['sources_used'].append('NumVerify')
 
-        # Supplement with Twilio data
+        # Supplement with Twilio data (Twilio data is more reliable, so it overrides NumVerify)
         if twilio_data.get('valid'):
             summary['valid'] = True
             if twilio_data.get('country_code'):
                 summary['country'] = twilio_data['country_code']
+
+            # Use Twilio line type intelligence data if available (more accurate than NumVerify)
+            if 'line_type_intelligence_data' in twilio_data:
+                lti_data = twilio_data['line_type_intelligence_data']
+                if lti_data.get('carrier_name'):
+                    summary['carrier'] = lti_data['carrier_name']
+                if lti_data.get('type'):
+                    summary['line_type'] = lti_data['type']
+
             summary['sources_used'].append('Twilio')
 
         # Extract owner name from Twilio if found
         if twilio_data.get('OWNER_NAME'):
             summary['owner_name'] = twilio_data['OWNER_NAME']
-            summary['sources_used'].append('Twilio Name Hunt')
+            if 'Twilio Name Hunt' not in summary['sources_used']:
+                summary['sources_used'].append('Twilio Name Hunt')
+
+        # Also check caller_name_data for names
+        if 'caller_name_data' in twilio_data:
+            caller_data = twilio_data['caller_name_data']
+            if isinstance(caller_data, dict) and caller_data.get('caller_name'):
+                summary['owner_name'] = caller_data['caller_name']
+                if 'Twilio Name Hunt' not in summary['sources_used']:
+                    summary['sources_used'].append('Twilio Name Hunt')
 
         # Use fallback if no APIs worked
         if not summary['sources_used']:

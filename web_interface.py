@@ -134,6 +134,77 @@ def index():
                 transform: scale(0.98);
             }
 
+            .advanced-section {
+                margin-top: 20px;
+                padding: 20px;
+                background: rgba(0, 255, 0, 0.05);
+                border: 1px solid #00ff00;
+                border-radius: 5px;
+                transition: all 0.3s ease;
+            }
+
+            .phone-input-container {
+                background: rgba(0, 255, 0, 0.05);
+                border: 1px solid rgba(0, 255, 0, 0.3);
+                border-radius: 5px;
+                padding: 20px;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            .advanced-toggle-text {
+                color: #00aa00;
+                font-family: 'Courier Prime', monospace;
+                font-size: 14px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                margin-top: 10px;
+                text-decoration: underline;
+                opacity: 0.8;
+            }
+
+            .advanced-toggle-text:hover {
+                color: #00ff00;
+                opacity: 1;
+                text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+            }
+
+            .identity-inputs {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 15px;
+                justify-content: center;
+                margin-top: 15px;
+            }
+
+            .identity-input {
+                background: transparent;
+                border: 1px solid rgba(0, 255, 0, 0.5);
+                color: #00ff00;
+                padding: 8px 12px;
+                font-family: 'Courier Prime', monospace;
+                font-size: 12px;
+                border-radius: 3px;
+                outline: none;
+                transition: all 0.3s ease;
+                width: 140px;
+                text-align: center;
+            }
+
+            .identity-input:focus {
+                outline: none;
+                border-color: #00ff00;
+                box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            }
+
+            .identity-input::placeholder {
+                color: rgba(0, 255, 0, 0.6);
+            }
+
+            .advanced-section.hidden {
+                display: none;
+            }
+
             .terminal-output {
                 background: #000;
                 border: 2px solid #00ff00;
@@ -329,9 +400,30 @@ def index():
             </div>
 
             <div class="input-section">
-                <input type="text" class="phone-input" id="phone" placeholder="+1234567890" maxlength="15">
-                <button class="hack-button" onclick="initInvestigation()">
-                    > HACK THE MATRIX <
+                <div class="phone-input-container">
+                    <input type="text" class="phone-input" id="phone" placeholder="+1234567890" maxlength="15">
+                    <div class="advanced-toggle-text" onclick="toggleAdvanced()">
+                        🔧 Click here for enhanced identity hunting options
+                    </div>
+                </div>
+
+                <div class="advanced-section hidden" id="advancedSection">
+                    <div style="color: #00ff00; margin-bottom: 15px; text-align: center;">
+                        🎯 ENHANCED IDENTITY HUNTING 🎯<br>
+                        <small>💡 Tip: At least one additional attribute significantly improves name resolution from Twilio and other APIs</small>
+                    </div>
+                    <div class="identity-inputs">
+                        <input type="text" class="identity-input" id="firstName" placeholder="First Name">
+                        <input type="text" class="identity-input" id="lastName" placeholder="Last Name">
+                        <input type="text" class="identity-input" id="city" placeholder="City">
+                        <input type="text" class="identity-input" id="state" placeholder="State">
+                        <input type="text" class="identity-input" id="postalCode" placeholder="ZIP Code">
+                        <input type="text" class="identity-input" id="address" placeholder="Address">
+                    </div>
+                </div>
+
+                <button class="hack-button" id="mainButton" onclick="initInvestigation()">
+                    > Which Pill Will You Choose? <
                 </button>
             </div>
 
@@ -411,6 +503,44 @@ def index():
                 }, 30);
             }
 
+            function toggleAdvanced() {
+                const section = document.getElementById('advancedSection');
+                const button = event.target;
+                const mainButton = document.getElementById('mainButton');
+
+                if (section.classList.contains('hidden')) {
+                    section.classList.remove('hidden');
+                    button.textContent = '🔽 Click here to hide advanced options';
+                    mainButton.textContent = '> YEET BOTH PILLS <';
+                    addTerminalLine('[SYSTEM] Advanced identity hunting protocols activated', 'info');
+                } else {
+                    section.classList.add('hidden');
+                    button.textContent = '🔧 Click here for enhanced identity hunting options';
+                    mainButton.textContent = '> Which Pill Will You Choose? <';
+                    addTerminalLine('[SYSTEM] Standard investigation mode selected', 'info');
+                }
+            }
+
+            function collectIdentityData() {
+                const identityData = {};
+
+                const firstName = document.getElementById('firstName').value.trim();
+                const lastName = document.getElementById('lastName').value.trim();
+                const city = document.getElementById('city').value.trim();
+                const state = document.getElementById('state').value.trim();
+                const postalCode = document.getElementById('postalCode').value.trim();
+                const address = document.getElementById('address').value.trim();
+
+                if (firstName) identityData.first_name = firstName;
+                if (lastName) identityData.last_name = lastName;
+                if (city) identityData.city = city;
+                if (state) identityData.state = state;
+                if (postalCode) identityData.postal_code = postalCode;
+                if (address) identityData.address = address;
+
+                return identityData;
+            }
+
             function initInvestigation() {
                 const phone = document.getElementById('phone').value;
                 if (!phone) {
@@ -424,16 +554,37 @@ def index():
                 // Generate session ID
                 currentSessionId = Date.now().toString();
 
+                // Collect identity data for enhanced hunting
+                const identityData = collectIdentityData();
+                const hasIdentityData = Object.keys(identityData).length > 0;
+
+                if (hasIdentityData) {
+                    addTerminalLine(`[SYSTEM] Enhanced identity hunting mode activated`, 'success');
+                    addTerminalLine(`[SYSTEM] Identity parameters: ${Object.keys(identityData).join(', ')}`, 'info');
+                } else {
+                    addTerminalLine(`[SYSTEM] Standard hunting mode - phone number only`, 'info');
+                }
+
                 addTerminalLine(`[SYSTEM] Initiating investigation for target: ${phone}`, 'success');
                 addTerminalLine('[SYSTEM] Establishing secure connection...', 'info');
                 addTerminalLine('[SYSTEM] Loading deep scan modules...', 'info');
                 addTerminalLine('[SYSTEM] Bypassing security protocols...', 'warning');
 
-                // Start investigation
+                // Start investigation with identity data
+                const payload = {
+                    phone: phone,
+                    session_id: currentSessionId
+                };
+
+                if (hasIdentityData) {
+                    payload.identity_data = identityData;
+                    addTerminalLine('[SYSTEM] Uploading identity parameters for enhanced hunting...', 'warning');
+                }
+
                 fetch('/investigate', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({phone: phone, session_id: currentSessionId})
+                    body: JSON.stringify(payload)
                 })
                 .then(response => {
                     if (response.ok) {
@@ -550,6 +701,7 @@ def index():
 def investigate():
     phone = request.json['phone']
     session_id = request.json.get('session_id', str(time.time()))
+    identity_data = request.json.get('identity_data', {})
 
     # Create a queue for this session
     output_queue = Queue()
@@ -564,9 +716,15 @@ def investigate():
         python_path = sys.executable
 
         try:
+            # Build command with identity data
+            cmd = [python_path, 'phone_osint_master.py', phone]
+            if identity_data:
+                cmd.append(json.dumps(identity_data))
+                output_queue.put(('info', f"🎯 Enhanced investigation with identity data: {list(identity_data.keys())}"))
+
             # Run investigation with real-time output capture
             process = subprocess.Popen(
-                [python_path, 'phone_osint_master.py', phone],
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,

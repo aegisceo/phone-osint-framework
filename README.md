@@ -13,25 +13,29 @@ A comprehensive, professional-grade phone number investigation framework that co
 
 ## 🚀 Features
 
-### 🎯 Aggressive Name Hunting (THE GRAIL)
-- **🔥 Advanced Twilio Integration**: Leverages caller_name, validation, line_type_intelligence, and identity_match fields
-- **💰 Multi-API Name Resolution**: Combines NumVerify and Twilio for maximum name extraction success
-- **🎯 Targeted Owner Discovery**: Prioritizes full name extraction as primary investigation objective
-- **📊 Enhanced Validation Pipeline**: Comprehensive phone validation with name hunting emphasis
+### 🎯 Aggressive Name Hunting (THE GRAIL) - **v2.0 ENHANCED**
+- **🔥 Advanced Twilio Integration**: Fixed identity_match API with proper parameter formatting and enhanced caller_name extraction
+- **🕵️ FastPeopleSearch Integration**: Enhanced anti-detection with sophisticated headers and human-like behavior patterns
+- **📞 WhitePages Professional API**: Official API integration for reliable phone number owner identification (API key required)
+- **🎯 Unified Name Hunter**: Fixed critical extraction bugs and improved correlation engine with parallel/sequential execution
+- **📊 Enhanced Identity Collection**: Web interface identity data now properly flows through entire investigation pipeline
+- **💰 Multi-API Name Resolution**: **FIXED DATA PRIORITY** - Twilio's accurate data now correctly overrides NumVerify's incorrect data
+- **🎯 Targeted Owner Discovery**: Improved confidence scoring and similarity matching for better name correlation
 
-### 🔍 Intelligence Gathering
+### 🔍 Intelligence Gathering - **v2.0 CLEANED**
 - **🔍 Multi-Source Intelligence**: Combines 7+ OSINT APIs and tools (NumVerify, Twilio, Google, HIBP, etc.)
-- **📊 PhoneInfoga Integration**: Automated phone number format analysis and scanning
+- **📊 PhoneInfoga Integration**: **CLEANED** - Filtered out useless search URLs, now shows only actionable phone format data
 - **🕵️ Advanced Google Dorking**: Intelligent search queries with categorization
 - **📱 Social Media Discovery**: Cross-platform phone number association checks
 - **🔐 Data Breach Analysis**: Have I Been Pwned integration with enhanced breach correlation
 - **📡 Carrier Intelligence**: Deep carrier and location analysis with real data
 
 ### 🎭 Matrix-Themed Experience
-- **🎭 Hacker-Style Web Interface**: Full Matrix theme with animated rain effects
+- **🎭 Hacker-Style Web Interface**: Full Matrix theme with animated rain effects and enhanced identity collection
 - **⚡ Real-Time Streaming**: Live investigation progress with color-coded terminal output
+- **🔧 Advanced Identity Hunting Options**: Expandable interface for collecting additional identity attributes (name, address, city, state, postal code)
 - **🤖 Matrix Quotes**: Random humorous Matrix-inspired quotes during investigations
-- **📊 Professional Reporting**: Comprehensive HTML reports with inline browser viewing
+- **📊 Professional Reporting**: Comprehensive HTML reports with enhanced name hunting results and confidence scoring
 - **🎨 Color-Coded Output**: Different colors for quotes, errors, and investigation stages
 
 ### 🛡️ Security & Reliability
@@ -46,15 +50,20 @@ A comprehensive, professional-grade phone number investigation framework that co
 ├── 📁 config/                 # Configuration and API keys
 ├── 📁 scripts/                # Modular scanner components
 │   ├── phone_validator.py     # NumVerify + Twilio validation
+│   ├── unified_name_hunter.py # Advanced name hunting coordination (NEW)
+│   ├── fastpeople_hunter.py   # FastPeopleSearch integration (NEW)
+│   ├── whitepages_hunter.py   # WhitePages API integration (NEW)
 │   ├── google_dorker.py       # Google search intelligence
 │   ├── social_scanner.py      # Social media discovery
 │   ├── breach_checker.py      # Data breach analysis
 │   ├── carrier_analyzer.py    # Carrier intelligence
-│   └── report_generator.py    # Report generation
+│   └── report_generator.py    # Enhanced report generation
 ├── 📁 results/                # Investigation outputs
-├── 📄 phone_osint_master.py   # Main orchestrator
-├── 🎭 web_interface.py        # Matrix-themed web interface
+├── 📄 phone_osint_master.py   # Main orchestrator (enhanced)
+├── 🎭 web_interface.py        # Matrix-themed web interface (enhanced)
 ├── 🧪 test_apis.py           # API testing suite
+├── 🧪 test_phase1_features.py # Phase 1 feature testing (NEW)
+├── 🧪 test_identity_integration.py # Identity data testing (NEW)
 └── 📚 docs/                   # Documentation
 ```
 
@@ -119,7 +128,9 @@ Experience the future of OSINT investigations with our Matrix-themed terminal in
 |---------|----------|---------|------|
 | [NumVerify](https://numverify.com/) | ✅ Yes | Phone validation & carrier lookup | Free tier available |
 | [Google Custom Search](https://developers.google.com/custom-search) | ✅ Yes | Advanced dorking capabilities | Free 100 queries/day |
-| [Twilio](https://www.twilio.com/) | ⭐ Recommended | Enhanced phone validation | Pay-per-use |
+| [Twilio](https://www.twilio.com/) | ⭐ Recommended | Enhanced phone validation with identity matching | Pay-per-use |
+| **[FastPeopleSearch](https://www.fastpeoplesearch.com/)** | 🆓 **No API Key** | **Comprehensive name hunting** | **Free scraping** |
+| **[WhitePages](https://pro.whitepages.com/)** | 🔑 **API Required** | **Professional name identification** | **Business application** |
 | [Hunter.io](https://hunter.io/) | ⭐ Recommended | Email discovery | Free tier available |
 | [Shodan](https://www.shodan.io/) | ⭐ Recommended | Infrastructure intelligence | Free tier available |
 | [Have I Been Pwned](https://haveibeenpwned.com/API/v3) | ⚡ Optional | Breach database access | Paid service |
@@ -139,29 +150,47 @@ python phone_osint_master.py +44123456789
 ls results/20231215_143022_+1234567890/
 ```
 
-### Matrix Web Interface
+### Matrix Web Interface (Enhanced)
 1. Start server: `python web_interface.py`
 2. Navigate to `http://localhost:5000`
 3. Enter target phone number in the terminal
-4. Click "HACK THE MATRIX" to begin investigation
-5. Watch real-time streaming output with Matrix effects
-6. Access comprehensive HTML report when complete
+4. **[NEW]** Click "🔧 SHOW ADVANCED OPTIONS" for enhanced identity hunting
+5. **[NEW]** Fill in additional identity attributes (name, address, city, state, postal code)
+6. Click "HACK THE MATRIX" to begin investigation
+7. Watch real-time streaming output with Matrix effects
+8. Access comprehensive HTML report with enhanced name hunting results
 
-**Features:**
-- Real-time investigation streaming
+**Enhanced Features:**
+- **🔧 Advanced Identity Hunting Options**: Expandable form for better Twilio identity matching
+- **🎯 4-Tier Name Hunting**: Twilio → FastPeopleSearch → WhitePages → Unified correlation
+- **📊 Confidence Scoring**: Real-time name correlation with similarity matching
+- Real-time investigation streaming with enhanced name hunting progress
 - Matrix rain background animation
 - Hacker-style terminal formatting
-- Live progress indicators
+- Live progress indicators with name hunting success rates
 - Professional cyber aesthetics
 
-### Python Integration
+### Python Integration (Enhanced)
 ```python
 from phone_osint_master import PhoneOSINTMaster
 
 # Initialize investigator
 investigator = PhoneOSINTMaster("+1234567890")
 
-# Run investigation
+# Enhanced name hunting with identity data
+identity_data = {
+    'first_name': 'John',
+    'last_name': 'Doe',
+    'city': 'San Francisco',
+    'state': 'CA',
+    'postal_code': '94102'
+}
+
+# Run enhanced name hunting only
+name_results = investigator.run_unified_name_hunting(identity_data)
+print(f"Names found: {name_results['primary_names']}")
+
+# Run full investigation (enhanced)
 report_path = investigator.run_full_investigation()
 print(f"Report generated: {report_path}")
 ```
@@ -174,12 +203,13 @@ results/20231215_143022_+1234567890/
 ├── 📄 investigation.log          # Detailed execution log
 ├── 📄 complete_results.json      # Raw investigation data
 ├── 📄 phone_validation.json      # NumVerify + Twilio validation
+├── 📄 name_hunting_results.json  # **[NEW]** Unified name hunting results
 ├── 📄 phoneinfoga_results.json   # PhoneInfoga format analysis
 ├── 📄 google_dork_results.json   # Search intelligence
 ├── 📄 social_media_results.json  # Social platform findings
 ├── 📄 breach_check_results.json  # Data breach results
 ├── 📄 carrier_analysis.json      # Carrier intelligence
-└── 📄 investigation_report.html  # Professional HTML report
+└── 📄 investigation_report.html  # **[ENHANCED]** Professional HTML report with name hunting
 ```
 
 ## 🧪 Testing & Validation
@@ -189,10 +219,18 @@ results/20231215_143022_+1234567890/
 # Test all configured APIs
 python test_apis.py
 
+# **[NEW]** Test Phase 1 enhanced features
+python test_phase1_features.py
+
+# **[NEW]** Test identity data integration
+python test_identity_integration.py
+
 # Expected output:
 # NumVerify            [OK] Working
 # Google Search        [OK] Working
 # Twilio               [OK] Working
+# FastPeopleSearch     [OK] Working (no API key needed)
+# WhitePages           [X] Failed (API key required)
 # Hunter.io            [OK] Working
 # Shodan               [OK] Working
 # Have I Been Pwned    [OK] Working
@@ -251,8 +289,13 @@ HUNTER_API_KEY=your_hunter_io_key
 SHODAN_KEY=your_shodan_api_key
 HAVEIBEENPWNED_API_KEY=your_hibp_key
 
+# **[NEW]** Advanced Name Hunting APIs
+WHITEPAGES_API_KEY=your_whitepages_api_key  # Requires business application
+
 # Optional Services
 OPENCELLID_API_KEY=your_opencellid_key
+
+# **[NEW]** FastPeopleSearch - No API key required (web scraping)
 ```
 
 ### Performance Settings

@@ -23,9 +23,14 @@ class UnifiedNameHunter:
     and applies intelligent correlation to extract phone number owners
     """
 
-    def __init__(self, phone_number: str):
+    def __init__(self, phone_number: str, identity_data: Dict = None):
         self.phone = phone_number
+        self.identity_data = identity_data or {}
         self.logger = logging.getLogger(__name__)
+
+        # Log identity data if provided
+        if self.identity_data:
+            self.logger.info(f"🎯 Enhanced hunting with identity data: {list(self.identity_data.keys())}")
 
         # Initialize all hunting modules
         self.phone_validator = PhoneValidator(phone_number)
@@ -155,9 +160,15 @@ class UnifiedNameHunter:
         return results
 
     def _hunt_twilio_enhanced(self) -> Dict:
-        """Enhanced Twilio hunting with aggressive name extraction"""
+        """Enhanced Twilio hunting with aggressive name extraction and identity matching"""
         try:
-            validation_results = self.phone_validator.validate_with_twilio()
+            # Use enhanced Twilio validation with identity data if available
+            if self.identity_data:
+                self.logger.info("🎯 Using identity data for enhanced Twilio hunting")
+                validation_results = self._validate_with_twilio_identity()
+            else:
+                validation_results = self.phone_validator.validate_with_twilio()
+
             names = []
 
             # Extract owner name if found
@@ -167,17 +178,105 @@ class UnifiedNameHunter:
             # Look for caller name data
             if 'caller_name_data' in validation_results:
                 caller_data = validation_results['caller_name_data']
-                if hasattr(caller_data, 'caller_name') and caller_data.caller_name:
+                if isinstance(caller_data, dict) and caller_data.get('caller_name'):
+                    names.append(caller_data['caller_name'])
+                elif hasattr(caller_data, 'caller_name') and caller_data.caller_name:
                     names.append(caller_data.caller_name)
 
             return {
                 'found': len(names) > 0,
                 'names': names,
                 'confidence': 0.9 if names else 0.0,
-                'raw_data': validation_results
+                'raw_data': validation_results,
+                'used_identity_data': bool(self.identity_data)
             }
         except Exception as e:
             return {'error': str(e), 'found': False}
+
+    def _validate_with_twilio_identity(self) -> Dict:
+        """Enhanced Twilio validation using identity data for better matching"""
+        try:
+            from twilio.rest import Client
+            import os
+
+            twilio_sid = os.getenv('TWILIO_SID')
+            twilio_token = os.getenv('TWILIO_AUTH_TOKEN')
+
+            if not twilio_sid or not twilio_token:
+                self.logger.warning("Twilio credentials not configured")
+                return {}
+
+            client = Client(twilio_sid, twilio_token)
+            result = {}
+
+            # Try identity match with provided data
+            if self.identity_data:
+                self.logger.info("🎯 Attempting Twilio identity match with provided data")
+
+                # Prepare identity match fields
+                fields = ['identity_match']
+                params = {}
+
+                # Map our identity data to Twilio's expected format
+                if 'first_name' in self.identity_data:
+                    params['FirstName'] = self.identity_data['first_name']
+                if 'last_name' in self.identity_data:
+                    params['LastName'] = self.identity_data['last_name']
+                if 'address' in self.identity_data:
+                    params['AddressLine1'] = self.identity_data['address']
+                if 'city' in self.identity_data:
+                    params['City'] = self.identity_data['city']
+                if 'state' in self.identity_data:
+                    params['State'] = self.identity_data['state']
+                if 'postal_code' in self.identity_data:
+                    params['PostalCode'] = self.identity_data['postal_code']
+
+                if params:  # Only try if we have at least some identity data
+                    try:
+                        # Use the correct Twilio API format - fields as parameter, identity data as separate params
+                        enhanced_lookup = client.lookups.v2.phone_numbers(self.phone).fetch(
+                            fields='identity_match',
+                            **params
+                        )
+
+                        if hasattr(enhanced_lookup, 'identity_match'):
+                            identity_match = enhanced_lookup.identity_match
+                            result['identity_match_data'] = identity_match
+
+                            # Extract any confirmed name information
+                            if hasattr(identity_match, 'summary_score'):
+                                score = identity_match.summary_score
+                                result['identity_match_score'] = score
+
+                                if score and score > 0.5:  # High confidence match
+                                    # Construct full name from matched parts
+                                    full_name_parts = []
+                                    if 'first_name' in self.identity_data and getattr(identity_match, 'first_name_match', None):
+                                        full_name_parts.append(self.identity_data['first_name'])
+                                    if 'last_name' in self.identity_data and getattr(identity_match, 'last_name_match', None):
+                                        full_name_parts.append(self.identity_data['last_name'])
+
+                                    if full_name_parts:
+                                        result['OWNER_NAME'] = ' '.join(full_name_parts)
+                                        self.logger.info(f"🔥 IDENTITY MATCH SUCCESS: {result['OWNER_NAME']} (score: {score})")
+
+                    except Exception as e:
+                        self.logger.warning(f"Twilio identity match failed: {e}")
+                        result['identity_match_error'] = str(e)
+
+            # Also try standard caller name lookup as fallback
+            try:
+                caller_lookup = client.lookups.v2.phone_numbers(self.phone).fetch(fields='caller_name')
+                if hasattr(caller_lookup, 'caller_name'):
+                    result['caller_name_data'] = caller_lookup.caller_name
+            except Exception as e:
+                self.logger.warning(f"Twilio caller name lookup failed: {e}")
+
+            return result
+
+        except Exception as e:
+            self.logger.error(f"Enhanced Twilio validation error: {e}")
+            return {'error': str(e)}
 
     def _hunt_whitepages(self) -> Dict:
         """WhitePages hunting"""
