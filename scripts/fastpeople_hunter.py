@@ -12,6 +12,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import quote
 import re
 from typing import Dict, List, Optional
+from .api_utils import FastPeopleSearchClient
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -25,10 +26,14 @@ class FastPeopleHunter:
     THE GRAIL: Maximum name extraction through multiple techniques
     """
 
-    def __init__(self, phone_number: str):
+    def __init__(self, phone_number: str, proxy_list: Optional[List[str]] = None):
         self.phone = phone_number
         self.clean_phone = self._clean_phone_number(phone_number)
         self.logger = logging.getLogger(__name__)
+
+        # Load proxies from config/proxies.txt if not provided
+        self.proxy_list = proxy_list if proxy_list is not None else self._load_proxies()
+        self.current_proxy_index = 0
 
         # User agents for rotation
         self.user_agents = [
@@ -39,6 +44,35 @@ class FastPeopleHunter:
 
         # Search patterns for different phone formats
         self.search_formats = self._generate_search_formats()
+
+        # Rate-limited client for FastPeopleSearch
+        self.fps_client = FastPeopleSearchClient()
+
+    def _load_proxies(self) -> List[str]:
+        """Load SOCKS5 proxies from config/proxies.txt"""
+        try:
+            with open('config/proxies.txt', 'r') as f:
+                proxies = [line.strip() for line in f if line.strip()]
+            if proxies:
+                self.logger.info(f"✓ Loaded {len(proxies)} proxies for FastPeopleSearch")
+            return proxies
+        except FileNotFoundError:
+            self.logger.warning("No proxies.txt found - running without proxies")
+            return []
+
+    def _rotate_proxy(self) -> Optional[Dict]:
+        """Get next proxy from pool"""
+        if not self.proxy_list:
+            return None
+
+        proxy = self.proxy_list[self.current_proxy_index]
+        self.current_proxy_index = (self.current_proxy_index + 1) % len(self.proxy_list)
+
+        # SOCKS5 proxy format
+        return {
+            'http': proxy,
+            'https': proxy
+        }
 
     def _clean_phone_number(self, phone: str) -> str:
         """Clean phone number for searching"""
@@ -97,8 +131,10 @@ class FastPeopleHunter:
 
         for format_phone in self.search_formats[:3]:  # Try top 3 formats
             try:
-                # Longer random delay to avoid detection
-                time.sleep(random.uniform(3, 8))
+                # Rotate proxy
+                proxies = self._rotate_proxy()
+                if proxies:
+                    self.logger.debug(f"Using proxy for FastPeopleSearch request")
 
                 # Enhanced headers to appear more human-like
                 headers = {
@@ -120,23 +156,32 @@ class FastPeopleHunter:
                     'Connection': 'keep-alive'
                 }
 
-                # Search URL
+                # Try direct request with proxy first
                 search_url = f"https://www.fastpeoplesearch.com/name/{quote(format_phone)}"
-
                 self.logger.info(f"🔍 Searching FastPeopleSearch with format: {format_phone}")
 
-                response = session.get(search_url, headers=headers, timeout=15)
-                response.raise_for_status()
+                response = session.get(
+                    search_url,
+                    headers=headers,
+                    proxies=proxies,
+                    timeout=15,
+                    allow_redirects=True
+                )
 
-                # Parse results
-                soup = BeautifulSoup(response.content, 'html.parser')
-                parsed_data = self._parse_fastpeople_results(soup)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    parsed_data = self._parse_fastpeople_results(soup)
 
-                if parsed_data['found']:
-                    results.update(parsed_data)
-                    results['search_format'] = format_phone
-                    self.logger.info(f"💰 JACKPOT! Names found via requests: {parsed_data['names']}")
-                    break
+                    if parsed_data['found']:
+                        results.update(parsed_data)
+                        results['search_format'] = format_phone
+                        self.logger.info(f"💰 JACKPOT! Names found via requests: {parsed_data['names']}")
+                        break
+                else:
+                    self.logger.warning(f"FastPeopleSearch returned {response.status_code}")
+
+                # Delay between attempts
+                time.sleep(3 + random.uniform(0, 2))
 
             except Exception as e:
                 self.logger.warning(f"FastPeopleSearch requests error for {format_phone}: {e}")

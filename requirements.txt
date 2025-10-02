@@ -1,5 +1,7 @@
 requests==2.31.0
 beautifulsoup4==4.12.2
+lxml==4.9.3  # For faster XML parsing (Yandex API responses)
+dnspython==2.4.2  # For email DNS MX validation
 pandas==2.1.3
 selenium==4.15.2
 phonenumbers==8.13.24
@@ -15,3 +17,4 @@ seaborn==0.13.0
 colorama==0.4.6
 twilio==8.10.1
 flask==3.0.0
+PySocks==1.7.1  # For SOCKS5 proxy support
