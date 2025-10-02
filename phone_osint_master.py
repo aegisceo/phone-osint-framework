@@ -28,11 +28,20 @@ class PhoneOSINTMaster:
         
     def setup_logging(self):
         log_file = self.output_dir / "investigation.log"
+
+        # Try to reconfigure stdout for UTF-8 (safer than reopening file descriptor)
+        # This handles emojis without breaking subprocess.Popen(stdout=PIPE)
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        except (AttributeError, OSError):
+            # stdout is not reconfigurable (e.g., when it's a PIPE from subprocess)
+            pass
+
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(log_file),
+                logging.FileHandler(log_file, encoding='utf-8'),
                 logging.StreamHandler(sys.stdout)
             ]
         )
@@ -127,46 +136,76 @@ class PhoneOSINTMaster:
             self.logger.error(f"PhoneInfoga error: {e}")
             return {}
     
-    def run_google_dorking(self, phone_data):
-        """Enhanced Google dorking based on phone data"""
+    def run_google_dorking(self, phone_data, enriched_identity=None):
+        """Enhanced Google dorking based on enriched identity (names+emails) and phone data"""
         self.logger.info("Running enhanced Google dorking...")
-        
+
         from scripts.google_dorker import GoogleDorker
-        dorker = GoogleDorker(self.phone_number, phone_data)
+        dorker = GoogleDorker(self.phone_number, phone_data, enriched_identity)
         results = dorker.search()
-        
+
         output_file = self.output_dir / "google_dork_results.json"
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2)
-            
+
+        return results
+
+    def run_yandex_scraping(self, enriched_identity=None, proxy_list=None):
+        """
+        Yandex search scraping with anti-bot measures
+        Particularly useful for Russian/Eastern European data
+        """
+        self.logger.info("Running Yandex search scraping...")
+
+        from scripts.yandex_scraper import YandexScraper, load_free_proxy_list
+
+        # Load proxies if not provided
+        if proxy_list is None:
+            proxy_list = load_free_proxy_list()
+            if proxy_list:
+                self.logger.info(f"Loaded {len(proxy_list)} proxies for rotation")
+            else:
+                self.logger.warning("No proxies available - scraping without proxy rotation (higher risk of blocking)")
+
+        scraper = YandexScraper(self.phone_number, enriched_identity, proxy_list)
+        results = scraper.search()
+
+        output_file = self.output_dir / "yandex_results.json"
+        with open(output_file, 'w') as f:
+            json.dump(results, f, indent=2)
+
+        # Log summary
+        total = sum(len(v) for v in results.values())
+        self.logger.info(f"Yandex scraping complete: {total} results found")
+
         return results
     
-    def run_social_media_scan(self):
-        """Check social media platforms"""
+    def run_social_media_scan(self, discovered_emails=None):
+        """Check social media platforms with email correlation"""
         self.logger.info("Scanning social media platforms...")
-        
+
         from scripts.social_scanner import SocialMediaScanner
-        scanner = SocialMediaScanner(self.phone_number)
+        scanner = SocialMediaScanner(self.phone_number, discovered_emails)
         results = scanner.scan_all_platforms()
-        
+
         output_file = self.output_dir / "social_media_results.json"
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2)
-            
+
         return results
     
-    def run_data_breach_check(self):
-        """Check data breaches"""
+    def run_data_breach_check(self, discovered_emails=None):
+        """Check data breaches using discovered emails"""
         self.logger.info("Checking data breach databases...")
-        
+
         from scripts.breach_checker import BreachChecker
         checker = BreachChecker(self.phone_number)
-        results = checker.check_all_sources()
-        
+        results = checker.check_all_sources(discovered_emails)
+
         output_file = self.output_dir / "breach_check_results.json"
         with open(output_file, 'w') as f:
             json.dump(results, f, indent=2)
-            
+
         return results
     
     def run_carrier_analysis(self, carrier_name):
@@ -233,12 +272,117 @@ class PhoneOSINTMaster:
 
         return results
 
+    def run_email_discovery(self, identity_data=None):
+        """Run comprehensive email discovery"""
+        self.logger.info("🎯 Starting email discovery...")
+
+        from scripts.email_hunter import EmailHunter
+        hunter = EmailHunter(self.phone_number, identity_data)
+        results = hunter.hunt_comprehensive()
+
+        output_file = self.output_dir / "email_discovery_results.json"
+        with open(output_file, 'w') as f:
+            json.dump(results, f, indent=2)
+
+        # Extract emails for use by other modules (only real discovered emails)
+        discovered_emails = []
+
+        # Add verified emails (highest confidence)
+        for email_data in results.get('verified_emails', []):
+            discovered_emails.append(email_data['email'])
+
+        # Add ALL emails found (including user-provided)
+        for email_data in results.get('emails', []):
+            discovered_emails.append(email_data['email'])
+
+        # Remove duplicates
+        discovered_emails = list(set(discovered_emails))
+
+        # Log results
+        total_emails = len(results.get('emails', [])) + len(results.get('verified_emails', []))
+        verified_count = len(results.get('verified_emails', []))
+
+        if results.get('found'):
+            self.logger.info(f"✅ Email discovery complete: {total_emails} emails found, {verified_count} verified")
+        else:
+            self.logger.warning("❌ No emails discovered")
+
+        # Return both full results and extracted emails for downstream use
+        return results, discovered_emails
+
+    def run_risk_assessment(self, all_results):
+        """Run comprehensive risk assessment on investigation results"""
+        self.logger.info("🎯 Running intelligent risk assessment...")
+
+        from scripts.risk_assessor import RiskAssessor
+        assessor = RiskAssessor(self.phone_number)
+        risk_assessment = assessor.calculate_overall_risk(all_results)
+
+        output_file = self.output_dir / "risk_assessment.json"
+        with open(output_file, 'w') as f:
+            json.dump(risk_assessment, f, indent=2)
+
+        # Log key findings
+        score = risk_assessment['overall_score']
+        level = risk_assessment['risk_level']
+        factor_count = len(risk_assessment['risk_factors'])
+
+        self.logger.info(f"🎯 Risk Assessment Complete: {level} ({score}/10)")
+        self.logger.info(f"📊 {factor_count} risk factors analyzed")
+
+        return risk_assessment
+
+    def _build_enriched_identity(self, name_results, email_results, discovered_emails, original_identity=None):
+        """
+        Build enriched identity context from discovered data for smarter downstream searches
+        This prevents wasteful phone-only searches when we have names and emails
+        """
+        enriched = {
+            'phone': self.phone_number,
+            'primary_names': [],
+            'all_names': [],
+            'emails': discovered_emails or [],
+            'first_name': None,
+            'last_name': None,
+            'known_email': None
+        }
+
+        # Extract names from name hunting results
+        if name_results.get('found'):
+            enriched['primary_names'] = name_results.get('primary_names', [])
+            enriched['all_names'] = name_results.get('all_names', [])
+
+            # Parse first primary name into first/last
+            if enriched['primary_names']:
+                primary = enriched['primary_names'][0]
+                parts = primary.split()
+                if len(parts) >= 2:
+                    enriched['first_name'] = parts[0]
+                    enriched['last_name'] = ' '.join(parts[1:])
+                elif len(parts) == 1:
+                    enriched['first_name'] = parts[0]
+
+        # Add original identity data if no discovered data
+        if original_identity:
+            if not enriched['first_name'] and original_identity.get('first_name'):
+                enriched['first_name'] = original_identity['first_name']
+            if not enriched['last_name'] and original_identity.get('last_name'):
+                enriched['last_name'] = original_identity['last_name']
+            if original_identity.get('known_email'):
+                enriched['known_email'] = original_identity['known_email']
+
+        # Use first discovered email as primary
+        if enriched['emails'] and not enriched['known_email']:
+            enriched['known_email'] = enriched['emails'][0]
+
+        return enriched
+
     def run_full_investigation(self, identity_data=None):
         """Run complete investigation pipeline"""
         self.logger.info(f"Starting full investigation for: {self.phone_number}")
 
         if identity_data:
-            self.logger.info(f"🎯 Enhanced investigation with identity data: {list(identity_data.keys())}")
+            self.logger.info(f"Enhanced investigation with identity data: {list(identity_data.keys())}")
 
         all_results = {
             'phone_number': self.phone_number,
@@ -254,29 +398,59 @@ class PhoneOSINTMaster:
         name_hunting_results = self.run_unified_name_hunting(identity_data)
         all_results['results']['name_hunting'] = name_hunting_results
 
-        # 3. PhoneInfoga scan
+        # 🎯 BUILD PRELIMINARY ENRICHED IDENTITY - Use discovered names for email hunting!
+        preliminary_identity = self._build_enriched_identity(
+            name_hunting_results,
+            {},  # No email results yet
+            [],  # No discovered emails yet
+            identity_data
+        )
+        self.logger.info(f"🎯 Preliminary identity built with names: {preliminary_identity.get('primary_names', [])}")
+
+        # 3. EMAIL DISCOVERY - Now with discovered names from name hunting!
+        email_results, discovered_emails = self.run_email_discovery(preliminary_identity)
+        all_results['results']['email_discovery'] = email_results
+
+        # 🎯 FINALIZE ENRICHED IDENTITY CONTEXT - Add discovered emails!
+        enriched_identity = self._build_enriched_identity(
+            name_hunting_results,
+            email_results,
+            discovered_emails,
+            identity_data
+        )
+        self.logger.info(f"🎯 Enriched identity finalized: {list(enriched_identity.keys())}")
+
+        # 4. PhoneInfoga scan
         phone_data = self.run_phoneinfoga()
         all_results['results']['phoneinfoga'] = phone_data
 
-        # 4. Google dorking
-        google_results = self.run_google_dorking(phone_data)
+        # 5. Google dorking with enriched identity
+        google_results = self.run_google_dorking(phone_data, enriched_identity)
         all_results['results']['google_dorking'] = google_results
 
-        # 5. Social media
-        social_results = self.run_social_media_scan()
+        # 6. Yandex scraping (Russian/Eastern European data)
+        yandex_results = self.run_yandex_scraping(enriched_identity)
+        all_results['results']['yandex'] = yandex_results
+
+        # 7. Enhanced social media with email correlation
+        social_results = self.run_social_media_scan(discovered_emails)
         all_results['results']['social_media'] = social_results
 
-        # 6. Breach check
-        breach_results = self.run_data_breach_check()
+        # 7. Enhanced breach check with discovered emails
+        breach_results = self.run_data_breach_check(discovered_emails)
         all_results['results']['breaches'] = breach_results
 
-        # 7. Carrier analysis (using validation data)
+        # 8. Carrier analysis (using validation data)
         carrier_name = validation_results.get('summary', {}).get('carrier')
         if carrier_name and carrier_name != 'Unknown':
             carrier_results = self.run_carrier_analysis(carrier_name)
             all_results['results']['carrier_analysis'] = carrier_results
 
-        # 8. Generate report
+        # 9. INTELLIGENT RISK ASSESSMENT - Comprehensive multi-factor analysis
+        risk_assessment = self.run_risk_assessment(all_results)
+        all_results['results']['risk_assessment'] = risk_assessment
+
+        # 10. Generate report
         report_path = self.generate_report(all_results)
 
         # Save complete results
