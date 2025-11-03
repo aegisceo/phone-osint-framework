@@ -49,24 +49,54 @@ class FastPeopleHunter:
         self.fps_client = FastPeopleSearchClient()
 
     def _load_proxies(self) -> List[str]:
-        """Load SOCKS5 proxies from config/proxies.txt"""
+        """Load IPRoyal whitelisted proxy configuration"""
         try:
-            with open('config/proxies.txt', 'r') as f:
-                proxies = [line.strip() for line in f if line.strip()]
-            if proxies:
-                self.logger.info(f"✓ Loaded {len(proxies)} proxies for FastPeopleSearch")
-            return proxies
-        except FileNotFoundError:
-            self.logger.warning("No proxies.txt found - running without proxies")
+            # Check for IPRoyal whitelisted config first
+            import json
+            config_path = 'config/iproyal_config.json'
+            
+            if os.path.exists(config_path):
+                with open(config_path, 'r') as f:
+                    config = json.load(f)
+                
+                if config.get('mode') == 'whitelisted':
+                    proxy_host = config.get('proxy_host', 'geo.iproyal.com')
+                    proxy_port = config.get('proxy_port', 51222)
+                    proxy_string = f"socks5://{proxy_host}:{proxy_port}"
+                    
+                    self.logger.info(f"✓ IPRoyal whitelisted proxy configured: {proxy_host}:{proxy_port}")
+                    return [proxy_string]  # Single whitelisted proxy
+            
+            # Fallback to proxies.txt (legacy)
+            if os.path.exists('config/proxies.txt'):
+                with open('config/proxies.txt', 'r') as f:
+                    raw_proxies = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+                
+                if raw_proxies:
+                    self.logger.info(f"✓ Loaded {len(raw_proxies)} fallback proxies from proxies.txt")
+                    return raw_proxies
+            
+            self.logger.info("No proxies configured - using direct connection")
+            return []
+            
+        except Exception as e:
+            self.logger.warning(f"Proxy loading error: {e} - using direct connection")
             return []
 
     def _rotate_proxy(self) -> Optional[Dict]:
-        """Get next proxy from pool"""
-        if not self.proxy_list:
+        """Get proxy from pool (simplified for whitelisted IPRoyal)"""
+        if not self.proxy_list or len(self.proxy_list) == 0:
             return None
 
-        proxy = self.proxy_list[self.current_proxy_index]
-        self.current_proxy_index = (self.current_proxy_index + 1) % len(self.proxy_list)
+        # For whitelisted IPRoyal, just use the single endpoint (no rotation needed)
+        # For legacy proxies, rotate through the list
+        if len(self.proxy_list) == 1:
+            # Single whitelisted proxy (IPRoyal)
+            proxy = self.proxy_list[0]
+        else:
+            # Multiple proxies (legacy mode)
+            proxy = self.proxy_list[self.current_proxy_index]
+            self.current_proxy_index = (self.current_proxy_index + 1) % len(self.proxy_list)
 
         # SOCKS5 proxy format
         return {
@@ -205,14 +235,9 @@ class FastPeopleHunter:
 
         driver = None
         try:
-            # Setup Chrome options
-            chrome_options = Options()
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
-            chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--window-size=1920,1080')
-            chrome_options.add_argument(f'--user-agent={random.choice(self.user_agents)}')
+            # Setup Chrome options with error suppression
+            from .chrome_config import get_stealth_chrome_options
+            chrome_options = get_stealth_chrome_options(user_agent=random.choice(self.user_agents))
 
             driver = webdriver.Chrome(options=chrome_options)
             driver.set_page_load_timeout(30)

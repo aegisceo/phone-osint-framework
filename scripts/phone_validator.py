@@ -8,6 +8,7 @@ import requests
 import logging
 from twilio.rest import Client
 from dotenv import load_dotenv
+from .api_utils import NumVerifyClient
 
 load_dotenv('config/.env')
 
@@ -21,6 +22,9 @@ class PhoneValidator:
         self.twilio_sid = os.getenv('TWILIO_SID')
         self.twilio_token = os.getenv('TWILIO_AUTH_TOKEN')
 
+        # Rate-limited API clients
+        self.numverify_client = NumVerifyClient(self.numverify_key)
+
     def validate_with_numverify(self):
         """Validate phone number using NumVerify API"""
         if not self.numverify_key:
@@ -31,18 +35,10 @@ class PhoneValidator:
             # Remove + from number for NumVerify
             clean_number = self.phone.replace('+', '')
 
-            url = "http://apilayer.net/api/validate"
-            params = {
-                'access_key': self.numverify_key,
-                'number': clean_number,
-                'country_code': '',
-                'format': 1
-            }
-
-            response = requests.get(url, params=params, timeout=10)
-            response.raise_for_status()
-
-            data = response.json()
+            data = self.numverify_client.validate(clean_number)
+            if data is None:
+                self.logger.warning(f"NumVerify validation failed for {clean_number}")
+                return {'valid': False, 'error': 'NumVerify API call failed'}
 
             if data.get('valid'):
                 self.logger.info(f"NumVerify validation successful: {data.get('carrier', 'Unknown carrier')}")

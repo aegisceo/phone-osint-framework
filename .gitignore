@@ -25,6 +25,12 @@ config/.env.*
 config/api_keys*
 config/secrets*
 
+# Browser cookies and session files (may contain auth tokens)
+.google-cookie
+*.cookie
+config/sessions/
+*.session
+
 # Investigation Results and Sensitive Data
 # These directories may contain PII and sensitive investigation data
 results/
@@ -36,6 +42,15 @@ cache/
 data/
 temp/
 tmp/
+temp_*/
+
+# Downloaded tools and binaries
+chromedriver*
+geckodriver*
+phoneinfoga*
+*.tar.gz
+*.zip
+!requirements.txt
 
 # Log files
 *.log
@@ -259,5 +274,7 @@ site/
 #    - Remove it immediately
 #    - Rewrite history if necessary
 #    - Rotate any exposed credentials
-# ===========================================#*.zip
-*.tar.gz
+# ===========================================# External tool directories (cloned repos)
+sherlock/
+theHarvester/
+maigret/

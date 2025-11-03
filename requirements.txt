@@ -4,6 +4,7 @@ lxml==4.9.3  # For faster XML parsing (Yandex API responses)
 dnspython==2.4.2  # For email DNS MX validation
 pandas==2.1.3
 selenium==4.15.2
+undetected-chromedriver>=3.5.4  # For TruePeopleSearch CAPTCHA bypass
 phonenumbers==8.13.24
 google==3.0.0
 googlesearch-python==1.2.3

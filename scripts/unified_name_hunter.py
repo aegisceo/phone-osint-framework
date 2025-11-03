@@ -14,8 +14,7 @@ from difflib import SequenceMatcher
 
 # Import our hunting modules
 from scripts.phone_validator import PhoneValidator
-from scripts.fastpeople_hunter import FastPeopleHunter
-from scripts.whitepages_hunter import WhitePagesHunter
+from scripts.truepeoplesearch_scraper import search_truepeoplesearch
 
 class UnifiedNameHunter:
     """
@@ -23,9 +22,10 @@ class UnifiedNameHunter:
     and applies intelligent correlation to extract phone number owners
     """
 
-    def __init__(self, phone_number: str, identity_data: Dict = None):
+    def __init__(self, phone_number: str, identity_data: Dict = None, skip_truepeoplesearch: bool = False):
         self.phone = phone_number
         self.identity_data = identity_data or {}
+        self.skip_truepeoplesearch = skip_truepeoplesearch
         self.logger = logging.getLogger(__name__)
 
         # Log identity data if provided
@@ -34,16 +34,13 @@ class UnifiedNameHunter:
 
         # Initialize all hunting modules
         self.phone_validator = PhoneValidator(phone_number)
-        self.fastpeople_hunter = FastPeopleHunter(phone_number)
-        self.whitepages_hunter = WhitePagesHunter(phone_number)
 
         # Name correlation settings
         self.min_name_similarity = 0.7  # Minimum similarity for name correlation
         self.confidence_weights = {
-            'twilio': 0.9,      # Highest weight for official Twilio data
-            'whitepages': 0.85, # High weight for WhitePages API
-            'fastpeople': 0.7,  # Medium weight for scraped data
-            'numverify': 0.6    # Lower weight for basic validation
+            'twilio': 0.9,          # Highest weight for official Twilio data
+            'truepeoplesearch': 0.8,  # High weight - free, comprehensive data
+            'numverify': 0.6        # Lower weight for basic validation
         }
 
     def hunt_parallel(self) -> Dict:
@@ -68,13 +65,18 @@ class UnifiedNameHunter:
         # Define hunting tasks
         hunting_tasks = [
             ('twilio', self._hunt_twilio_enhanced),
-            ('whitepages', self._hunt_whitepages),
-            ('fastpeople', self._hunt_fastpeople),
             ('numverify', self._hunt_numverify)
         ]
+        
+        # Only add TruePeopleSearch if not skipped
+        if not self.skip_truepeoplesearch:
+            hunting_tasks.append(('truepeoplesearch', self._hunt_truepeoplesearch))
+        else:
+            self.logger.info("⏭️ TruePeopleSearch skipped (will run in dedicated step after breach discovery)")
 
         # Execute in parallel using ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=4) as executor:
+        max_workers = 3 if not self.skip_truepeoplesearch else 2
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_method = {
                 executor.submit(task_func): method_name
                 for method_name, task_func in hunting_tasks
@@ -125,10 +127,9 @@ class UnifiedNameHunter:
 
         # Sequential hunting order (fastest/most reliable first)
         hunting_sequence = [
-            ('twilio', self._hunt_twilio_enhanced, 0.8),      # High confidence threshold
-            ('whitepages', self._hunt_whitepages, 0.7),      # Medium-high threshold
-            ('numverify', self._hunt_numverify, 0.6),        # Medium threshold
-            ('fastpeople', self._hunt_fastpeople, 0.5)       # Lower threshold (slower)
+            ('twilio', self._hunt_twilio_enhanced, 0.8),         # High confidence threshold
+            ('numverify', self._hunt_numverify, 0.6),           # Medium threshold
+            ('truepeoplesearch', self._hunt_truepeoplesearch, 0.7)  # High quality free data
         ]
 
         for method_name, hunt_func, confidence_threshold in hunting_sequence:
@@ -217,19 +218,19 @@ class UnifiedNameHunter:
                 fields = ['identity_match']
                 params = {}
 
-                # Map our identity data to Twilio's expected format
+                # Map our identity data to Twilio's expected format (snake_case)
                 if 'first_name' in self.identity_data:
-                    params['FirstName'] = self.identity_data['first_name']
+                    params['first_name'] = self.identity_data['first_name']
                 if 'last_name' in self.identity_data:
-                    params['LastName'] = self.identity_data['last_name']
+                    params['last_name'] = self.identity_data['last_name']
                 if 'address' in self.identity_data:
-                    params['AddressLine1'] = self.identity_data['address']
+                    params['address_line_1'] = self.identity_data['address']
                 if 'city' in self.identity_data:
-                    params['City'] = self.identity_data['city']
+                    params['city'] = self.identity_data['city']
                 if 'state' in self.identity_data:
-                    params['State'] = self.identity_data['state']
+                    params['state'] = self.identity_data['state']
                 if 'postal_code' in self.identity_data:
-                    params['PostalCode'] = self.identity_data['postal_code']
+                    params['postal_code'] = self.identity_data['postal_code']
 
                 if params:  # Only try if we have at least some identity data
                     try:
@@ -278,19 +279,41 @@ class UnifiedNameHunter:
             self.logger.error(f"Enhanced Twilio validation error: {e}")
             return {'error': str(e)}
 
-    def _hunt_whitepages(self) -> Dict:
-        """WhitePages hunting"""
+    def _hunt_truepeoplesearch(self) -> Dict:
+        """
+        TruePeopleSearch hunting - Free comprehensive people search
+        Returns: names, addresses, age, associates, relatives
+        """
         try:
-            return self.whitepages_hunter.hunt_comprehensive()
+            self.logger.info(f"🔍 Searching TruePeopleSearch for: {self.phone}")
+            results = search_truepeoplesearch(self.phone)
+            
+            if results.get('found'):
+                # Convert to unified format
+                names = results.get('names', [])
+                return {
+                    'found': True,
+                    'names': names,
+                    'confidence': 0.8,  # High confidence - direct match
+                    'source': 'truepeoplesearch',
+                    'metadata': {
+                        'current_address': results.get('current_address'),
+                        'previous_addresses': results.get('previous_addresses', []),
+                        'age': results.get('age'),
+                        'associates': results.get('associates', []),
+                        'relatives': results.get('relatives', [])
+                    }
+                }
+            else:
+                return {
+                    'found': False,
+                    'source': 'truepeoplesearch',
+                    'note': results.get('note', 'No results found')
+                }
+                
         except Exception as e:
-            return {'error': str(e), 'found': False}
-
-    def _hunt_fastpeople(self) -> Dict:
-        """FastPeopleSearch hunting"""
-        try:
-            return self.fastpeople_hunter.hunt_comprehensive()
-        except Exception as e:
-            return {'error': str(e), 'found': False}
+            self.logger.error(f"TruePeopleSearch error: {e}")
+            return {'error': str(e), 'found': False, 'source': 'truepeoplesearch'}
 
     def _hunt_numverify(self) -> Dict:
         """Enhanced NumVerify hunting"""
@@ -340,7 +363,7 @@ class UnifiedNameHunter:
                 source_names.extend(results.get('names', []))
                 if results.get('caller_id_name'):
                     source_names.append(results['caller_id_name'])
-            elif source in ['fastpeople', 'twilio']:
+            elif source in ['truepeoplesearch', 'twilio']:
                 source_names.extend(results.get('names', []))
             elif source == 'numverify':
                 # NumVerify doesn't provide names
@@ -487,9 +510,20 @@ class UnifiedNameHunter:
     def _clean_name(self, name: str) -> Optional[str]:
         """
         Clean and validate a name string
+        Handles formats like "LINDLEY, DAVID" or "Lindley, David" and converts to "David Lindley"
         """
         if not name:
             return None
+
+        # Handle "LastName, FirstName" format (common in Twilio responses)
+        if ',' in name:
+            parts = name.split(',')
+            if len(parts) == 2:
+                last_name = parts[0].strip()
+                first_name = parts[1].strip()
+                # Reconstruct as "FirstName LastName"
+                name = f"{first_name} {last_name}"
+                self.logger.info(f"🔧 Reformatted name: '{parts[0].strip()}, {parts[1].strip()}' -> '{name}'")
 
         # Remove extra whitespace and special characters
         cleaned = re.sub(r'[^\w\s\-\.]', '', name).strip()

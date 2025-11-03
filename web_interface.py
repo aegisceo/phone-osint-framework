@@ -14,6 +14,29 @@ app = Flask(__name__)
 # Global dictionary to store investigation sessions
 investigation_sessions = {}
 
+# Add security headers to all responses
+@app.after_request
+def add_security_headers(response):
+    """Add Content Security Policy and other security headers"""
+    # CSP to prevent XSS attacks
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline'; "  # unsafe-inline needed for inline scripts in HTML string
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src https://fonts.gstatic.com; "
+        "img-src 'self' data:; "
+        "frame-src 'self'; "  # Allow iframes from same origin for reports
+        "connect-src 'self'"
+    )
+
+    # Additional security headers
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+
+    return response
+
 @app.route('/')
 def index():
     return '''
@@ -415,6 +438,7 @@ def index():
                     <div class="identity-inputs">
                         <input type="text" class="identity-input" id="firstName" placeholder="First Name">
                         <input type="text" class="identity-input" id="lastName" placeholder="Last Name">
+                        <input type="email" class="identity-input" id="email" placeholder="Known Email (optional)">
                         <input type="text" class="identity-input" id="city" placeholder="City">
                         <input type="text" class="identity-input" id="state" placeholder="State">
                         <input type="text" class="identity-input" id="postalCode" placeholder="ZIP Code">
@@ -484,17 +508,19 @@ def index():
                 // Use color type if provided, otherwise fall back to message type
                 const colorClass = color || type;
                 line.className = `terminal-line terminal-${colorClass}`;
-                line.innerHTML = text;
+                // XSS Fix: Use textContent instead of innerHTML to prevent script injection
+                line.textContent = text;
                 terminal.appendChild(line);
                 terminal.scrollTop = terminal.scrollHeight;
             }
 
             function typeWriterEffect(element, text, callback) {
                 let i = 0;
-                element.innerHTML = '';
+                // XSS Fix: Use textContent instead of innerHTML for typewriter effect
+                element.textContent = '';
                 const timer = setInterval(() => {
                     if (i < text.length) {
-                        element.innerHTML += text.charAt(i);
+                        element.textContent += text.charAt(i);
                         i++;
                     } else {
                         clearInterval(timer);
@@ -526,6 +552,7 @@ def index():
 
                 const firstName = document.getElementById('firstName').value.trim();
                 const lastName = document.getElementById('lastName').value.trim();
+                const email = document.getElementById('email').value.trim();
                 const city = document.getElementById('city').value.trim();
                 const state = document.getElementById('state').value.trim();
                 const postalCode = document.getElementById('postalCode').value.trim();
@@ -533,6 +560,7 @@ def index():
 
                 if (firstName) identityData.first_name = firstName;
                 if (lastName) identityData.last_name = lastName;
+                if (email) identityData.known_email = email;
                 if (city) identityData.city = city;
                 if (state) identityData.state = state;
                 if (postalCode) identityData.postal_code = postalCode;
@@ -548,8 +576,12 @@ def index():
                     return;
                 }
 
-                // Clear terminal
-                document.getElementById('terminal').innerHTML = '<div class="scan-line"></div>';
+                // Clear terminal - XSS Fix: Use DOM methods instead of innerHTML
+                const terminal = document.getElementById('terminal');
+                terminal.textContent = '';
+                const scanLine = document.createElement('div');
+                scanLine.className = 'scan-line';
+                terminal.appendChild(scanLine);
 
                 // Generate session ID
                 currentSessionId = Date.now().toString();
@@ -611,15 +643,34 @@ def index():
                     } else if (data.type === 'complete') {
                         addTerminalLine('[SYSTEM] Investigation complete. Report generated.', 'success');
                         if (data.report_url) {
+                            // XSS Fix: Use DOM methods to safely create links
                             const terminal = document.getElementById('terminal');
                             const linkDiv = document.createElement('div');
                             linkDiv.className = 'terminal-line';
-                            linkDiv.innerHTML = `
-                                <div style="margin-top: 15px;">
-                                    <a href="${data.report_url}" target="_blank" class="report-link" style="margin-right: 15px;">>> OPEN REPORT IN NEW TAB <<</a>
-                                    <button onclick="loadReportInline('${data.report_url}')" class="report-link" style="background: rgba(255,165,0,0.1); border-color: #ffaa00; color: #ffaa00;">>> VIEW REPORT HERE <<</button>
-                                </div>
-                            `;
+
+                            const container = document.createElement('div');
+                            container.style.marginTop = '15px';
+
+                            // Create link element
+                            const link = document.createElement('a');
+                            link.href = data.report_url;
+                            link.target = '_blank';
+                            link.className = 'report-link';
+                            link.style.marginRight = '15px';
+                            link.textContent = '>> OPEN REPORT IN NEW TAB <<';
+
+                            // Create button element
+                            const button = document.createElement('button');
+                            button.className = 'report-link';
+                            button.style.background = 'rgba(255,165,0,0.1)';
+                            button.style.borderColor = '#ffaa00';
+                            button.style.color = '#ffaa00';
+                            button.textContent = '>> VIEW REPORT HERE <<';
+                            button.onclick = () => loadReportInline(data.report_url);
+
+                            container.appendChild(link);
+                            container.appendChild(button);
+                            linkDiv.appendChild(container);
                             terminal.appendChild(linkDiv);
                         }
                         eventSource.close();
@@ -662,14 +713,24 @@ def index():
                     reportContainer.remove();
                 }
 
-                // Create new report container
+                // Create new report container - XSS Fix: Use DOM methods
                 reportContainer = document.createElement('div');
                 reportContainer.id = 'reportContainer';
                 reportContainer.className = 'report-container';
-                reportContainer.innerHTML = `
-                    <button class="close-report" onclick="closeReport()">✕ CLOSE REPORT</button>
-                    <iframe src="${reportUrl}" title="Investigation Report"></iframe>
-                `;
+
+                // Create close button
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'close-report';
+                closeBtn.textContent = '✕ CLOSE REPORT';
+                closeBtn.onclick = closeReport;
+
+                // Create iframe
+                const iframe = document.createElement('iframe');
+                iframe.src = reportUrl;
+                iframe.title = 'Investigation Report';
+
+                reportContainer.appendChild(closeBtn);
+                reportContainer.appendChild(iframe);
 
                 // Add to page
                 document.querySelector('.terminal-container').appendChild(reportContainer);
@@ -713,7 +774,11 @@ def investigate():
 
     # Start investigation in background thread
     def run_investigation():
-        python_path = sys.executable
+        # Use venv Python - handle both Windows and Linux paths
+        if sys.platform == 'win32':
+            python_path = os.path.join(os.getcwd(), 'venv', 'Scripts', 'python.exe')
+        else:
+            python_path = os.path.join(os.getcwd(), 'venv', 'bin', 'python')
 
         try:
             # Build command with identity data
@@ -898,4 +963,4 @@ def view_report(report_id):
     return report_path.read_text()
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)

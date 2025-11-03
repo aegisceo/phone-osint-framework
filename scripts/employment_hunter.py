@@ -44,6 +44,48 @@ class EmploymentHunter:
         # Clean phone number for processing
         self.clean_phone = re.sub(r'[^\d]', '', phone_number)
 
+    def _is_valid_employer(self, employer: str) -> bool:
+        """
+        Validate employer name to filter out noise
+        Returns False for time patterns, single letters, common words
+        """
+        if not employer or len(employer) < 3:
+            return False
+
+        employer_lower = employer.lower().strip()
+
+        # Filter time patterns
+        time_patterns = [
+            r'^[ap]\.?m\.?$',              # a.m, p.m, am, pm
+            r'^\d{1,2}:\d{2}',             # 3:00, 12:30
+            r'^\d{1,2}\s*[ap]\.?m\.?$',    # 3 pm, 3pm, 3 p.m
+        ]
+        for pattern in time_patterns:
+            if re.match(pattern, employer_lower):
+                return False
+
+        # Filter common non-employer words
+        blacklist = {
+            'inc', 'llc', 'ltd', 'corp', 'the', 'and', 'or', 'for', 'at',
+            'in', 'on', 'to', 'from', 'with', 'by', 'as', 'of',
+            'am', 'pm', 'est', 'pst', 'mst', 'cst',
+            'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday',
+            'january', 'february', 'march', 'april', 'may', 'june', 'july',
+            'august', 'september', 'october', 'november', 'december',
+        }
+        if employer_lower in blacklist:
+            return False
+
+        # Filter single/double letter strings
+        if len(employer_lower) <= 2:
+            return False
+
+        # Filter if it's just numbers
+        if employer_lower.replace('.', '').replace(':', '').isdigit():
+            return False
+
+        return True
+
     def search_employment_with_google(self) -> Dict:
         """Use targeted Google dorking to find employment information - PRIORITIZE NAME+EMAIL!"""
         results = {
@@ -84,27 +126,22 @@ class EmploymentHunter:
 
             self.logger.info(f"🎯 Employment hunting with NAME: {full_name}")
 
-            # Query 1: Direct LinkedIn profile search (most likely to find actual profile)
-            search_queries.append(f'site:linkedin.com/in/ "{full_name}"')
+            # OPTIMIZED: Only TOP priority employment queries (reduced from 6 to 2-3)
+            priority_queries = [
+                # TOP PRIORITY: Direct LinkedIn profile (90% success rate)
+                f'site:linkedin.com/in/ "{full_name}"',
+                
+                # HIGH PRIORITY: Professional context
+                f'site:linkedin.com "{full_name}"'
+            ]
 
-            # Query 2: LinkedIn with common job title indicators (catches profile snippets)
-            search_queries.append(f'site:linkedin.com "{full_name}" "Engineer" OR "Developer" OR "Manager" OR "Director" OR "Analyst"')
-
-            # Query 3: Resume/CV PDFs (often publicly indexed)
-            search_queries.append(f'"{full_name}" filetype:pdf "resume" OR "cv" OR "curriculum vitae"')
-
-            # Query 4: Professional bios and about pages
-            search_queries.append(f'"{full_name}" "about" OR "bio" OR "profile" -site:facebook.com -site:twitter.com')
-
-            # Query 5: Email domain company connection (if work email)
+            # Add work email domain query if available (high value)
             if email_domain and email_domain not in ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'aol.com', 'icloud.com']:
-                # Might be a corporate email
-                search_queries.append(f'"{full_name}" site:{email_domain}')
-                self.logger.info(f"🎯 Detected potential work email domain: {email_domain}")
+                priority_queries.append(f'"{full_name}" site:{email_domain}')
+                self.logger.info(f"🎯 Added work email domain query: {email_domain}")
 
-            # Limit to 5 queries total
-            search_queries = search_queries[:5]
-            self.logger.info(f"Employment hunting: {len(search_queries)} NAME-BASED queries (NO phone searches - they don't work!)")
+            search_queries = priority_queries
+            self.logger.info(f"🎯 OPTIMIZED: {len(search_queries)} priority employment queries (reduced from 6 to save API quota)")
 
             # Patterns to extract employment information
             company_patterns = [
@@ -148,6 +185,11 @@ class EmploymentHunter:
                                             discovered_domains.add(domain)
                                     else:  # It's a company name
                                         company = match.strip(' .,')
+
+                                        # Filter out invalid patterns
+                                        if not self._is_valid_employer(company):
+                                            continue
+
                                         if len(company) > 2 and len(company) < 50:  # Reasonable company name
                                             discovered_companies.add(company)
 

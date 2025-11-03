@@ -1,10 +1,9 @@
-socks5h://user-spl7z4j5jt-session-1-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
-socks5h://user-spl7z4j5jt-session-2-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
-socks5h://user-spl7z4j5jt-session-3-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
-socks5h://user-spl7z4j5jt-session-4-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
-socks5h://user-spl7z4j5jt-session-5-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
-socks5h://user-spl7z4j5jt-session-6-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
-socks5h://user-spl7z4j5jt-session-7-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
-socks5h://user-spl7z4j5jt-session-8-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
-socks5h://user-spl7z4j5jt-session-9-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
-socks5h://user-spl7z4j5jt-session-10-country-ru:86yuG7x_dpp2CqnAOa@gate.decodo.com:7000
+# IPRoyal Proxy List
+# Format: socks5h://username:password@host:port
+# or plain host:port for basic SOCKS5
+
+# Add your IPRoyal proxies here when available
+# Example:
+# socks5h://user:pass@proxy.iproyal.com:12321
+
+# Note: Old Decodo proxies have been removed
